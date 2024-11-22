@@ -1,8 +1,10 @@
 from django_filters import rest_framework as filters
 from rest_framework import generics
 from rest_framework.filters import OrderingFilter
-from .models import Livro, Categoria, Autor
-from .serializers import LivroSerializer, CategoriaSerializer, AutorSerializer
+from rest_framework.permissions import IsAuthenticated
+from .models import Livro, Categoria, Autor, Colecao
+from .serializers import LivroSerializer, CategoriaSerializer, AutorSerializer, ColecaoSerializer
+from .permissions import IsOwnerOrReadOnly  
 
 
 class LivroFilter(filters.FilterSet):
@@ -15,6 +17,27 @@ class LivroFilter(filters.FilterSet):
     class Meta:
         model = Livro
         fields = ['titulo', 'autor', 'categoria', 'categoria_inicia_com', 'titulo_inicia_com']
+
+
+
+class ColecaoDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Colecao.objects.all()
+    serializer_class = ColecaoSerializer
+    permission_classes = [IsAuthenticated, IsOwnerOrReadOnly]
+
+    name = "colecao-detail"
+
+
+class ColecaoListCreate(generics.ListCreateAPIView):
+    queryset = Colecao.objects.all()
+    serializer_class = ColecaoSerializer
+    permission_classes = [IsAuthenticated]  
+
+    def perform_create(self, serializer):
+        
+        serializer.save(colecionador=self.request.user)
+
+    name = "colecao-list-create"
 
 class LivroDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Livro.objects.all()
@@ -31,6 +54,7 @@ class AutorDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Autor.objects.all()
     serializer_class = AutorSerializer
     name = "autor-detail"
+
 
 class CategoriaList(generics.ListCreateAPIView):
     queryset = Categoria.objects.all()
@@ -57,4 +81,3 @@ class LivroList(generics.ListCreateAPIView):
     ordering_fields = ['titulo', 'autor', 'categoria', 'publicado_em'] 
     ordering = ['titulo']  
     name = "livro-list"
-
